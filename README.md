@@ -6,7 +6,8 @@ A very simple and rudimentary Discord bot developed with JDA.
 
 The overall purpose of this project is a beginner's reference towards making a functional server bot in JDA along with up-to date and proper usage of JDA methods.
 
-## Getting Started
+## 
+Getting Started
 
 ### Dependencies
 
