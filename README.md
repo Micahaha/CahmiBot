@@ -18,7 +18,6 @@ The overall purpose of this project is a beginner's reference towards making a f
 
 ### Executing program
 
-* 
 ```
 ./gradlew clean build
 ```
