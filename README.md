@@ -14,6 +14,8 @@ The overall purpose of this project is a beginner's reference towards making a f
 
 ### Installing
 
+* Create a token.txt and place your token within the file
+
 * Build the project.
 
 ### Executing program
