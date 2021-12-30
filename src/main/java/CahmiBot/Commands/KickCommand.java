@@ -44,6 +44,7 @@ public class KickCommand extends ListenerAdapter {
                EmbedBuilder success = new EmbedBuilder();
                success.setColor(Color.GREEN);
                success.setTitle("Member " + target.getEffectiveName() + "has been kicked from " + guild.getName());
+               event.getChannel().sendMessageEmbeds(success.build()).queue();
            }
            catch(Exception e)
            {

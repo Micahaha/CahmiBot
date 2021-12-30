@@ -1,6 +1,7 @@
 package CahmiBot.Commands;
 
 import CahmiBot.Main;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -8,6 +9,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.awt.*;
 import java.util.List;
 
 public class MuteCommand  extends ListenerAdapter {
@@ -27,13 +29,20 @@ public class MuteCommand  extends ListenerAdapter {
                     if(!member.getRoles().contains(role))
                     {
                         // Mute the user
-                        event.getChannel().sendMessage(args[1] + " has been muted").queue();
+                        EmbedBuilder success = new EmbedBuilder();
+                        success.setColor(Color.GREEN);
+                        success.setTitle("Member " + member.getEffectiveName() + " has been muted ");
+                        event.getChannel().sendMessageEmbeds(success.build()).queue();
                         event.getGuild().addRoleToMember(member,role).complete();
                     }
                     else
                     {
-                        //unmute
-                        event.getChannel().sendMessage(args[1] + " has been unmuted").queue();
+                        //unmute the user
+                        EmbedBuilder success = new EmbedBuilder();
+                        success.setColor(Color.GREEN);
+                        success.setTitle("Member " + member.getEffectiveName() + " has been unmuted");
+                        event.getChannel().sendMessageEmbeds(success.build()).queue();
+
                         event.getGuild().removeRoleFromMember(member,role).complete();
                     }
 
@@ -45,7 +54,11 @@ public class MuteCommand  extends ListenerAdapter {
                     if(!member.getRoles().contains(role))
                     {
 
-                        event.getChannel().sendMessage("Muted " + args[1] + " for " + args[2] + " seconds").queue();
+                        // event.getChannel().sendMessage("Muted " + args[1] + " for " + args[2] + " seconds").queue();
+                        EmbedBuilder success = new EmbedBuilder();
+                        success.setColor(Color.GREEN);
+                        success.setTitle("Member " + member.getEffectiveName() + " has been muted for " + args[2] + " seconds");
+                        event.getChannel().sendMessageEmbeds(success.build()).queue();
                         event.getGuild().addRoleToMember(member,role).complete();
 
                         //unmute when
@@ -55,7 +68,11 @@ public class MuteCommand  extends ListenerAdapter {
                                 {
                                     public void run()
                                     {
-                                        event.getChannel().sendMessage(args[1] + " has been unmuted").queue();
+                                        EmbedBuilder success = new EmbedBuilder();
+                                        success.setColor(Color.GREEN);
+                                        success.setTitle("Member " + member.getEffectiveName() + " has been unmuted!");
+                                        event.getChannel().sendMessageEmbeds(success.build()).queue();
+
                                         event.getGuild().removeRoleFromMember(member,role).complete();
                                     }
                                 },
@@ -64,22 +81,38 @@ public class MuteCommand  extends ListenerAdapter {
                     }
                 }
 
+                // Error Messages
                 else
                 {
                     try
                     {
                         if(mentionedMembers.get(0).getUser().isBot())
                         {
-                            event.getChannel().sendMessage("Can't mute other bots!").queue();
+                            EmbedBuilder error = new EmbedBuilder();
+                            error.setColor(Color.red);
+                            error.setTitle("Can't mute other bots!");
+                            error.setDescription("usage ~mute [Member] or ~mute [Member] [amount of seconds]");
+
+                            event.getChannel().sendMessageEmbeds(error.build()).queue();
                         }
                         else if(mentionedMembers.get(0).hasPermission(Permission.ADMINISTRATOR))
                         {
-                            event.getChannel().sendMessage("Cannot mute role higher then bot").queue();
+                            EmbedBuilder error = new EmbedBuilder();
+                            error.setColor(Color.red);
+                            error.setTitle("Can't mute roles higher than bot!");
+                            error.setDescription("usage ~mute [Member] or ~mute [Member] [amount of seconds]");
+
+                            event.getChannel().sendMessageEmbeds(error.build()).queue();
                         }
                     }
                     catch(Exception e)
                     {
-                        event.getChannel().sendMessage("Incorrect Syntax!").queue();
+                        EmbedBuilder error = new EmbedBuilder();
+                        error.setColor(Color.red);
+                        error.setTitle("Incorrect syntax for command!");
+                        error.setDescription("usage ~mute [Member] or ~mute [Member] [amount of seconds]");
+
+                        event.getChannel().sendMessageEmbeds(error.build()).queue();
                     }
 
                 }
