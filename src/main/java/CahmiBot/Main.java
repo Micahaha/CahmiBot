@@ -1,9 +1,6 @@
 package CahmiBot;
 
-import CahmiBot.Commands.CheckUser;
-import CahmiBot.Commands.Clear;
-import CahmiBot.Commands.KickCommand;
-import CahmiBot.Commands.Ping;
+import CahmiBot.Commands.*;
 import CahmiBot.Events.GuildMemberJoin;
 import CahmiBot.Events.GuildMemberLeave;
 import net.dv8tion.jda.api.JDA;
@@ -25,7 +22,7 @@ public class Main {
         // JDA Bot THEN add new commands!
 
         jda = JDABuilder.createDefault(findToken())
-                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand())
+                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand())
                 .enableIntents(GatewayIntent.GUILD_MEMBERS)
                 .build();
 
