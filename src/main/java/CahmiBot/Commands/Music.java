@@ -2,6 +2,7 @@ package CahmiBot.Commands;
 
 import CahmiBot.Main;
 import CahmiBot.Services.Lavaplayer.GuildMusicManager;
+import CahmiBot.Services.Lavaplayer.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -9,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -18,21 +20,23 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.awt.*;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class Music extends ListenerAdapter {
 
     private final AudioPlayerManager playerManager;
     private final Map<Long, GuildMusicManager> musicManagers;
+    private final List<String> songList;
 
     public Music()
     {
         this.musicManagers = new HashMap<>();
         this.playerManager = new DefaultAudioPlayerManager();
+        this.songList = null;
         AudioSourceManagers.registerRemoteSources(playerManager);
         AudioSourceManagers.registerLocalSource(playerManager);
+
     }
 
     // COMMAND ARGUMENTS
@@ -44,27 +48,65 @@ public class Music extends ListenerAdapter {
         if(args[0].equalsIgnoreCase(Main.prefix + "play") && args.length == 2)
         {
             loadAndPlay((TextChannel) event.getChannel(), args[1]);
+
+
         }
         else if(args[0].equalsIgnoreCase(Main.prefix + "skip"))
         {
             skipTrack((TextChannel) event.getChannel());
         }
-        else if(args[0].equalsIgnoreCase(Main.prefix + "pause") || args[0].equalsIgnoreCase(Main.prefix + "play"))
+        else if(args[0].equalsIgnoreCase(Main.prefix + "pause"))
         {
             pauseAndPlay((TextChannel) event.getChannel());
         }
 
-        //Non Functional method as of right now, Need to learn streams ):
 
-    /*    else if(args[0].equals(Main.prefix + "queue"))
+        else if(args[0].equals(Main.prefix + "queue"))
         {
-            for(String song : songList((TextChannel) event.getChannel()))
-            {
-                event.getChannel().sendMessage(song).queue();
-            }
-        }
-    */
+           Queue<AudioTrack> queue = getGuildAudioPlayer(event.getGuild()).scheduler.queue;
+           synchronized (queue)
+           {
+               if(queue.isEmpty() && getGuildAudioPlayer(event.getGuild()).player.getPlayingTrack() == null)
+               {
+                   event.getChannel().sendMessage("The queue is empty").queue();
+               }
+               else if(getGuildAudioPlayer(event.getGuild()).player.getPlayingTrack() != null && queue.isEmpty())
+               {
+                   AudioTrack audioTrack = getGuildAudioPlayer(event.getGuild()).player.getPlayingTrack();
 
+                   EmbedBuilder success = new EmbedBuilder();
+                   success.setColor(Color.GREEN);
+                   success.addField("Playing Track: ",audioTrack.getInfo().title,false);
+                   success.addField("Author name: ",audioTrack.getInfo().author,false);
+                   success.setFooter("Duration: "  + getTimestamp(audioTrack.getDuration()));
+
+                   event.getChannel().sendMessageEmbeds(success.build()).queue();
+               }
+               else
+               {
+                   int trackCount = 0;
+                   long queueLength = 0;
+                   AudioTrack audioTrack = getGuildAudioPlayer(event.getGuild()).player.getPlayingTrack();
+                   EmbedBuilder success = new EmbedBuilder();
+
+                   success.addField("Current song playing: " + audioTrack.getInfo().title + "\n","Duration: " + getTimestamp(audioTrack.getDuration()),true);
+                   success.addField("Current queue ", "entries: " + queue.size(), false);
+                   for(AudioTrack track : queue)
+                   {
+                       queueLength += track.getDuration();
+                       if(trackCount < 10)
+                       {
+                           success.addField(track.getInfo().title,"`[" + getTimestamp(track.getDuration()) + "]` ",false);
+                           trackCount++;
+                       }
+                   }
+                   success.addField("Total queue length: ",(getTimestamp(queueLength)),false);
+
+                   event.getChannel().sendMessageEmbeds(success.build()).queue();
+
+               }
+           }
+        }
     }
 
 
@@ -100,7 +142,8 @@ public class Music extends ListenerAdapter {
                 success.setColor(Color.GREEN);
                 success.setTitle("Added: " + audioTrack.getInfo().title);
                 success.addField("Author name: ",audioTrack.getInfo().author,false);
-                success.setFooter("Duration: "  + (audioTrack.getDuration() / 60000) + ":" + ((audioTrack.getDuration()) / 1000) % 60);
+                success.setFooter("Duration: "  + getTimestamp(audioTrack.getDuration()));
+
 
                 channel.sendMessageEmbeds(success.build()).queue();
             }
@@ -116,7 +159,10 @@ public class Music extends ListenerAdapter {
                 }
                 channel.sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + audioPlaylist.getName() + ")").queue();
 
+
                 play(channel.getGuild(), musicManager, firstTrack);
+
+
             }
 
 
@@ -134,23 +180,12 @@ public class Music extends ListenerAdapter {
         });
     }
 
-   /* private List<String> songList(TextChannel channel)
-    {
-        List<String> songTitles = null;
-        GuildMusicManager musicManager = getGuildAudioPlayer(channel.getGuild());
-
-        for(AudioTrack track : musicManager.scheduler.queue)
-            {
-                songTitles.add(track.getInfo().title);
-            }
-
-            return songTitles;
-    }
-    */
 
     private void play(Guild guild, GuildMusicManager musicManager, AudioTrack audioTrack) {
         connectToFirstVoiceChannel(guild.getAudioManager());
         musicManager.scheduler.queue(audioTrack);
+
+
     }
     private void skipTrack(TextChannel channel)
     {
@@ -186,5 +221,16 @@ public class Music extends ListenerAdapter {
                 break;
             }
         }
+    }
+    private static String getTimestamp(long milliseconds)
+    {
+        int seconds = (int) (milliseconds / 1000) % 60 ;
+        int minutes = (int) ((milliseconds / (1000 * 60)) % 60);
+        int hours   = (int) ((milliseconds / (1000 * 60 * 60)) % 24);
+
+        if (hours > 0)
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        else
+            return String.format("%02d:%02d", minutes, seconds);
     }
 }
