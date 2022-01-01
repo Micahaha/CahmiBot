@@ -3,13 +3,21 @@ package CahmiBot;
 import CahmiBot.Commands.*;
 import CahmiBot.Events.GuildMemberJoin;
 import CahmiBot.Events.GuildMemberLeave;
+import CahmiBot.Services.Lavaplayer.GuildMusicManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -17,20 +25,28 @@ public class Main {
     public static String prefix = "~";
     public static JDA jda;
 
+
+
+
     public static void main(String[] args) throws LoginException, InterruptedException {
 
         // JDA Bot THEN add new commands!
 
         jda = JDABuilder.createDefault(findToken())
-                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand())
+                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand(), new Music())
                 .enableIntents(GatewayIntent.GUILD_MEMBERS)
                 .build();
 
 
         jda.awaitReady();
 
-
     }
+
+
+
+
+
+
 
     public static String findToken()
     {
