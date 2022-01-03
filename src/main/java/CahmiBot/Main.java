@@ -3,21 +3,14 @@ package CahmiBot;
 import CahmiBot.Commands.*;
 import CahmiBot.Events.GuildMemberJoin;
 import CahmiBot.Events.GuildMemberLeave;
-import CahmiBot.Services.Lavaplayer.GuildMusicManager;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -32,9 +25,14 @@ public class Main {
 
         // JDA Bot THEN add new commands!
 
+
+        // TODO: 1/3/2022 Optimize the process of adding new commands. Clean this code up basically
+
+
         jda = JDABuilder.createDefault(findToken())
                 .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand(), new Music())
-                .enableIntents(GatewayIntent.GUILD_MEMBERS)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_VOICE_STATES)
+                .enableCache(CacheFlag.VOICE_STATE)
                 .build();
 
 
@@ -42,16 +40,10 @@ public class Main {
 
     }
 
-
-
-
-
-
-
     public static String findToken()
     {
         File tokenFile = new File("C:\\Users\\Craft\\Documents\\Java\\jdabot\\src\\main\\java\\token.txt");
-        String token = null;
+        String token;
 
         try(Scanner s = new Scanner(tokenFile))
         {

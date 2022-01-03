@@ -33,7 +33,7 @@ public class TrackScheduler extends AudioEventAdapter {
     {
         if(!this.player.startTrack(track, true))
         {
-            this.queue.offer(track);
+            queue.offer(track);
         }
     }
 
@@ -41,7 +41,7 @@ public class TrackScheduler extends AudioEventAdapter {
     // Start next track
     public void nextTrack()
     {
-        this.player.startTrack(this.queue.poll(), false);
+        player.startTrack(queue.poll(), false);
     }
 
 
