@@ -11,45 +11,74 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import com.sun.jndi.toolkit.url.Uri;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.awt.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
+
+
 
 public class Music extends ListenerAdapter {
 
     private final AudioPlayerManager playerManager;
     private final Map<Long, GuildMusicManager> musicManagers;
-    private final List<String> songList;
 
     public Music()
     {
         this.musicManagers = new HashMap<>();
         this.playerManager = new DefaultAudioPlayerManager();
-        this.songList = null;
         AudioSourceManagers.registerRemoteSources(playerManager);
         AudioSourceManagers.registerLocalSource(playerManager);
 
     }
 
+
+    // TODO: 1/3/2022 Develop a command handler
+
     // COMMAND ARGUMENTS
     @Override
     public void onMessageReceived(MessageReceivedEvent event)
     {
+
+
         String[] args = event.getMessage().getContentRaw().split("\\s");
 
-        if(args[0].equalsIgnoreCase(Main.prefix + "play") && args.length == 2)
+        if(args[0].equalsIgnoreCase(Main.prefix + "play"))
         {
-            loadAndPlay((TextChannel) event.getChannel(), args[1]);
 
+            GuildMusicManager musicManager = getGuildAudioPlayer(event.getGuild());
+            String link = args[1];
+            StringBuilder sb = new StringBuilder("ytsearch:");
 
+                if(!link.contains("https://"))
+                {
+
+                   /*
+                    // TODO: 1/2/2022
+                    Implement soundcloud usage in command
+                   */
+
+                    for(int i = 1; i < args.length; i++)
+                    {
+                        sb.append(" " + args[i]);
+                    }
+                    loadAndPlay((TextChannel) event.getChannel(), sb.toString());
+                    System.out.println("hi");
+                    System.out.println(sb.toString());
+                }
+                else
+                {
+                    loadAndPlay((TextChannel) event.getChannel(), args[1]);
+                    System.out.println("I passed");
+                }
         }
         else if(args[0].equalsIgnoreCase(Main.prefix + "skip"))
         {
@@ -59,9 +88,53 @@ public class Music extends ListenerAdapter {
         {
             pauseAndPlay((TextChannel) event.getChannel());
         }
+        else if(args[0].equalsIgnoreCase(Main.prefix + "join"))
+        {
+            // Don't leave the voice channel it's currently in
+
+            final TextChannel channel = event.getTextChannel();
+            final Member self = event.getGuild().getSelfMember();
+            final GuildVoiceState selfVoiceState = self.getVoiceState();
+            if(selfVoiceState.inAudioChannel())
+            {
+                event.getChannel().sendMessage("Can't join! I'm currently in another voice channel right now!").queue();
+                return;
+            }
+                // Member who called command
+
+                final Member member = event.getMember();
+                final GuildVoiceState memberVoiceState  = member.getVoiceState();
 
 
-        else if(args[0].equals(Main.prefix + "queue"))
+                final AudioManager audioManager = event.getGuild().getAudioManager();
+                final AudioChannel memberChannel = memberVoiceState.getChannel();
+
+                audioManager.openAudioConnection(memberChannel);
+                channel.sendMessage("Connecting to " + memberChannel.getName()).queue();
+        }
+
+        else if(args[0].equalsIgnoreCase(Main.prefix + "leave"))
+        {
+            final Member self = event.getGuild().getSelfMember();
+            final GuildVoiceState selfVoiceState = self.getVoiceState();
+            final AudioManager audioManager = event.getGuild().getAudioManager();
+            GuildMusicManager musicManager = getGuildAudioPlayer(event.getGuild());
+
+            if(selfVoiceState.inAudioChannel())
+            {
+                event.getChannel().sendMessage("Leaving Channel").queue();
+                musicManager.player.stopTrack();
+                audioManager.closeAudioConnection();
+            }
+            else
+            {
+                event.getChannel().sendMessage("Not in a voice channel.").queue();
+            }
+
+        }
+
+
+        else if(args[0].equalsIgnoreCase(Main.prefix + "queue"))
         {
            Queue<AudioTrack> queue = getGuildAudioPlayer(event.getGuild()).scheduler.queue;
            synchronized (queue)
@@ -138,12 +211,10 @@ public class Music extends ListenerAdapter {
 
                 play(channel.getGuild(), musicManager, audioTrack);
 
-                EmbedBuilder success = new EmbedBuilder();
-                success.setColor(Color.GREEN);
+                EmbedBuilder success = new EmbedBuilder();success.setColor(Color.GREEN);
                 success.setTitle("Added: " + audioTrack.getInfo().title);
                 success.addField("Author name: ",audioTrack.getInfo().author,false);
                 success.setFooter("Duration: "  + getTimestamp(audioTrack.getDuration()));
-
 
                 channel.sendMessageEmbeds(success.build()).queue();
             }
@@ -152,6 +223,18 @@ public class Music extends ListenerAdapter {
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
 
                 AudioTrack firstTrack = audioPlaylist.getSelectedTrack();
+
+
+                if(firstTrack == null)
+                {
+                    firstTrack = audioPlaylist.getTracks().get(0);
+                }
+
+                channel.sendMessage("Adding to queue " + firstTrack.getInfo().title + " (first track of playlist " + audioPlaylist.getName() + ")").queue();
+
+                play(channel.getGuild(), musicManager, firstTrack);
+
+             /*   AudioTrack firstTrack = audioPlaylist.getSelectedTrack();
 
                 if(firstTrack == null)
                 {
@@ -162,9 +245,8 @@ public class Music extends ListenerAdapter {
 
                 play(channel.getGuild(), musicManager, firstTrack);
 
-
+            */
             }
-
 
             @Override
             public void noMatches() {
@@ -182,6 +264,8 @@ public class Music extends ListenerAdapter {
 
 
     private void play(Guild guild, GuildMusicManager musicManager, AudioTrack audioTrack) {
+
+
         connectToFirstVoiceChannel(guild.getAudioManager());
         musicManager.scheduler.queue(audioTrack);
 
@@ -232,5 +316,19 @@ public class Music extends ListenerAdapter {
             return String.format("%02d:%02d:%02d", hours, minutes, seconds);
         else
             return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    // Checks if it is a URL, if it's not, we return this to be false.
+    private boolean isUrl(String url)
+    {
+        try
+        {
+            new URI(url);
+            return true;
+        }
+        catch (URISyntaxException e)
+        {
+            return false;
+        }
     }
 }
