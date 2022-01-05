@@ -1,6 +1,7 @@
 package CahmiBot;
 
 import CahmiBot.Commands.*;
+import CahmiBot.Commands.Music.*;
 import CahmiBot.Events.GuildMemberJoin;
 import CahmiBot.Events.GuildMemberLeave;
 import net.dv8tion.jda.api.JDA;
@@ -30,7 +31,7 @@ public class Main {
 
 
         jda = JDABuilder.createDefault(findToken())
-                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand(), new Music())
+                .addEventListeners(new Ping(), new CheckUser(), new Clear(), new GuildMemberJoin(), new GuildMemberLeave(), new KickCommand(), new MuteCommand(), new PlayCommand(), new RepeatCommand(), new SkipCommand(),new QueueCommand(), new JoinCommand(), new StopCommand(), new PauseCommand())
                 .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_VOICE_STATES)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();

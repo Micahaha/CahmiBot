@@ -18,6 +18,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private final AudioPlayer player;
     public final LinkedList<AudioTrack> queue;
+    public boolean isRepeating;
 
 
     // Constructor for TrackScheduler
@@ -26,6 +27,7 @@ public class TrackScheduler extends AudioEventAdapter {
     {
         this.player = player;
         this.queue = new LinkedList<>();
+        isRepeating = false;
     }
 
     // if not currently playing a track, start a new one.
@@ -51,6 +53,10 @@ public class TrackScheduler extends AudioEventAdapter {
 
         if(endReason.mayStartNext){
             nextTrack();
+            if(isRepeating)
+            {
+                this.player.startTrack(track.makeClone(),false);
+            }
         }
     }
 }
