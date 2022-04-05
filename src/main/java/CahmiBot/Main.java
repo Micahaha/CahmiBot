@@ -44,7 +44,6 @@ public class Main {
     public static String findToken()
     {
         File tokenFile = new File("C:\\Users\\Craft\\Documents\\Java\\jdabot\\src\\main\\java\\token.txt");
-        String token;
 
         try(Scanner s = new Scanner(tokenFile))
         {
